@@ -7,8 +7,9 @@
 4. [Phase 3: Application Configuration](#phase-3-application-configuration)
 5. [Phase 4: Backend Deployment](#phase-4-backend-deployment)
 6. [Phase 5: Frontend Deployment](#phase-5-frontend-deployment)
-7. [Phase 6: Verification & Testing](#phase-6-verification--testing)
-8. [Phase 7: Monitoring & Maintenance](#phase-7-monitoring--maintenance)
+7. [Phase 6: Custom Domain & Verification](#phase-6-custom-domain--verification)
+8. [Phase 7: Final Verification & Testing](#phase-7-final-verification--testing)
+9. [Phase 8: Monitoring & Maintenance](#phase-8-monitoring--maintenance)
 
 ---
 
@@ -398,9 +399,135 @@ echo "CloudFront URL: https://$CF_DOMAIN"
 
 ---
 
-## Phase 6: Verification & Testing
+## Phase 6: Custom Domain & Verification
 
-### Step 6.1: Test Backend API
+### Step 6.1: Configure Custom Domain (Recommended)
+
+To use a professional domain like `stock.os` instead of the CloudFront distribution domain:
+
+#### Prerequisites
+- Domain name (e.g., stock.os purchased from Route 53, GoDaddy, Namecheap, etc.)
+- You must have access to the domain's DNS settings
+
+#### Configuration Steps
+
+**1. Request SSL/TLS Certificate**
+```bash
+# Create certificate in AWS Certificate Manager
+aws acm request-certificate \
+  --domain-name stock.os \
+  --subject-alternative-names "www.stock.os" "api.stock.os" \
+  --validation-method DNS \
+  --region us-east-1
+
+# Save the Certificate ARN
+CERT_ARN="arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/XXXX-XXXX"
+```
+
+**2. Verify Certificate (AWS will provide DNS CNAME)**
+- Go to: AWS Console → Certificate Manager
+- Click your certificate → Add CNAME records to your domain registrar
+- Wait for validation (usually 5-15 minutes)
+
+**3. Update CloudFront Distribution**
+```bash
+# Backup current config
+aws cloudfront get-distribution-config \
+  --id E1YKXYS6CAYRVP > cf-config-backup.json
+
+# Create updated config with custom domain
+cat > cf-config-update.json << 'EOF'
+{
+  "ViewerCertificate": {
+    "ACMCertificateArn": "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/XXXX",
+    "SSLSupportMethod": "sni-only",
+    "MinimumProtocolVersion": "TLSv1.2_2021"
+  },
+  "Aliases": {
+    "Quantity": 3,
+    "Items": ["stock.os", "www.stock.os", "api.stock.os"]
+  },
+  "DefaultRootObject": "index.html",
+  "Comment": "Stock.os Inventory Management System"
+}
+EOF
+
+# Update distribution (note: need ETag from get-distribution-config)
+ETAG=$(cat cf-config-backup.json | jq -r '.ETag')
+# Merge the configs and update (manual step recommended for production)
+echo "⚠️  Update CloudFront manually via AWS Console:"
+echo "   1. CloudFront → Distributions → E1YKXYS6CAYRVP"
+echo "   2. Edit → Alternate Domain Names → Add: stock.os, www.stock.os"
+echo "   3. Custom SSL Certificate → Select your certificate"
+echo "   4. Save"
+```
+
+**4. Update Route 53 DNS (or your registrar)**
+
+If using **Route 53**:
+```bash
+# Create alias record
+aws route53 change-resource-record-sets \
+  --hosted-zone-id ZONE_ID \
+  --change-batch '{
+    "Changes": [{
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "stock.os",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "Z2FDTNDATAQYW2",
+          "DNSName": "d15os9kcan23ap.cloudfront.net",
+          "EvaluateTargetHealth": false
+        }
+      }
+    }]
+  }'
+```
+
+If using **external registrar (GoDaddy, Namecheap, etc.)**:
+- Log into your registrar's DNS management
+- Add CNAME records:
+  - `stock.os` or `@` → `d15os9kcan23ap.cloudfront.net`
+  - `www` → `d15os9kcan23ap.cloudfront.net`
+  - `api` → `d15os9kcan23ap.cloudfront.net` (optional, if routing API separately)
+
+**5. Verify Domain Propagation**
+```bash
+# Wait 15-30 minutes for DNS propagation, then test:
+nslookup stock.os
+
+# If propagated, should see:
+# stock.os canonical name = d15os9kcan23ap.cloudfront.net
+
+# Test HTTPS
+curl -I https://stock.os   # Should show your certificate
+curl -I https://api.stock.os/health
+
+# Both should return SSL certificate from your domain
+```
+
+### Step 6.2: CloudFront Cache Management
+```bash
+# After deploying frontend updates, invalidate cache
+aws cloudfront create-invalidation \
+  --distribution-id E1YKXYS6CAYRVP \
+  --paths "/*"
+
+# For specific files only
+aws cloudfront create-invalidation \
+  --distribution-id E1YKXYS6CAYRVP \
+  --paths "/index.html" "/js/*" "/css/*" "/assets/*"
+
+# Check invalidation status
+aws cloudfront list-invalidations --distribution-id E1YKXYS6CAYRVP
+```
+
+---
+
+## Phase 7: Final Verification & Testing
+
+### Step 7.1: Test Backend API
 ```bash
 # Health check
 curl -X GET http://$EC2_PUBLIC_IP:80/auth/health
@@ -414,7 +541,7 @@ curl -X POST http://$EC2_PUBLIC_IP:80/api/auth/login \
   -d '{"username":"admin","password":"Test@123"}'
 ```
 
-### Step 6.2: Test Database Connection
+### Step 7.2: Test Database Connection
 ```bash
 # SSH to EC2
 ssh -i ~/.ssh/inventory-system-key.pem ec2-user@$EC2_PUBLIC_IP
@@ -426,7 +553,7 @@ sudo yum install -y postgresql
 psql -h $DB_HOST -U pgadmin -d inventory_db -c "SELECT version();"
 ```
 
-### Step 6.3: Test Frontend
+### Step 7.3: Test Frontend
 ```bash
 # Open browser
 https://$CF_DOMAIN/
@@ -435,7 +562,7 @@ https://$CF_DOMAIN/
 # Test login with database credentials
 ```
 
-### Step 6.4: Run Backend Tests
+### Step 7.4: Run Backend Tests
 ```bash
 cd inventory-management-system
 
@@ -463,7 +590,7 @@ npm test -- --coverage
 
 ---
 
-## Phase 7: Monitoring & Maintenance
+## Phase 8: Monitoring & Maintenance
 
 ### Step 7.1: Enable CloudWatch Logs
 ```bash
