@@ -1,0 +1,26 @@
+# Backend
+inventory-management-system/target/
+inventory-management-system/build/
+inventory-management-system/.classpath
+inventory-management-system/.project
+inventory-management-system/.settings/
+inventory-management-system/.idea/
+inventory-management-system/*.iml
+inventory-management-system/*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+
+# General
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+*.pem
+*.key
+.env
+.env.local

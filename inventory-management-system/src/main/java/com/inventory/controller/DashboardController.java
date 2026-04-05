@@ -1,0 +1,23 @@
+package com.inventory.controller;
+
+import com.inventory.service.DashboardService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/dashboard")
+public class DashboardController {
+
+    @Autowired
+    private DashboardService dashboardService;
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'STAFF')")
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        Map<String, Object> stats = dashboardService.getDashboardStats();
+        return ResponseEntity.ok(stats);
+    }
+}
