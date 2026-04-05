@@ -25,21 +25,6 @@ Stock.os is designed for three business outcomes:
 3. CloudFront distribution: E1YKXYS6CAYRVP
 4. Backend host: EC2 in ap-south-1 (routed via CloudFront /api/* behavior)
 
-## Demo Accounts
-
-Use these only for demonstration and validation.
-
-1. Admin demo account
-- Username: admin
-- Email: admin@stock.os
-- Password: admin1234@
-
-2. Teacher demo account
-- Username: teacherdemo
-- Email: teacherdemo@stock.os
-- Password: Demo1234@
-- Role: STAFF
-
 ## What Is Seeded In Production
 
 Production now includes live operational records to power charts for all roles.
@@ -120,4 +105,4 @@ Legacy and implementation artifacts are retained for traceability.
 
 ## License
 
-This repository is currently maintained as a project delivery baseline by 848deepak.
+This repository is maintained as a product baseline.
