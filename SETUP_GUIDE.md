@@ -94,10 +94,13 @@ A production-ready inventory management system with Spring Boot backend and Reac
 
 ## 🔐 Authentication
 
-**Default Credentials** (pre-configured in database):
+**Default Credentials** (auto-initialized on first run):
 - **Username**: admin
-- **Password**: admin123
+- **Password**: admin1234@
+- **Email**: admin@stock.os
 - **Role**: ADMIN
+
+The admin user is automatically created by the DataInitializer when the application starts for the first time. The password uses PBKDF2 hashing.
 
 ### JWT Token Flow
 
@@ -230,7 +233,7 @@ VITE_API_URL=http://localhost:8080/api
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"admin1234@"}'
 ```
 
 **Get All Products:**

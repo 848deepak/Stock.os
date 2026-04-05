@@ -21,7 +21,7 @@ Request:
 ```json
 {
   "username": "admin",
-  "password": "admin123"
+  "password": "admin1234@"
 }
 ```
 
@@ -355,7 +355,7 @@ Response:
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"admin1234@"}'
 ```
 
 Copy the `token` from response.

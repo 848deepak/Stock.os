@@ -23,7 +23,7 @@ Content-Type: application/json
 Request:
 {
   "username": "admin",
-  "password": "admin123"
+  "password": "admin1234@"
 }
 
 Response:

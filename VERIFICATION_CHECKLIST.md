@@ -11,7 +11,7 @@
 - [ ] MySQL server running on localhost:3306
 - [ ] Create database: `CREATE DATABASE inventory_db;`
 - [ ] Execute `schema.sql` file
-- [ ] Verify: 11 tables created
+- [ ] Verify: 11 tables created with proper indexes
 - [ ] Verify: Sample data populated
 
 ### Configuration
@@ -55,7 +55,7 @@ Expected Response:
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"admin1234@"}'
 ```
 
 - [ ] Response contains `token` field
